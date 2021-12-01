@@ -440,6 +440,11 @@ static inline void rcc_enableapb1(void)
 
   /* TODO: ... */
 
+ #ifdef CONFIG_STM32H7_FDCAN
+  /* FDCDAN clock enable */
+  regval |= RCC_APB1HENR_FDCANEN;
+#endif
+
   putreg32(regval, STM32_RCC_APB1HENR);   /* Enable APB1H peripherals */
 }
 
