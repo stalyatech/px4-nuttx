@@ -4361,7 +4361,7 @@ static int fdcan_hw_initialize(struct stm32_fdcan_s *priv)
 
   /* Wait for initialization mode to take effect */
 
-  while ((fdcan_getreg(priv, STM32_FDCAN_CCCR_OFFSET) & FDCAN_CCCR_INIT) == 0);
+  while ((fdcan_getreg(priv, STM32_FDCAN_CCCR_OFFSET) & FDCAN_CCCR_INIT) != 0);
 
   /* Enable writing to configuration registers */
 
