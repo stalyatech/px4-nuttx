@@ -1504,6 +1504,9 @@ config SDMMC2_SDIO_PULLUP
 endmenu # "SDMMC2 Configuration"
 endmenu # "SD/MMC Configuration"
 
+menu "CAN Configuration"
+	depends on STM32H7_FDCAN
+
 config STM32H7_FDCAN_REGDEBUG
 	bool "CAN Register level debug"
 	depends on DEBUG_CAN_INFO
