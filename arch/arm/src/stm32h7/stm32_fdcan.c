@@ -60,6 +60,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 #include <debug.h>
 
@@ -570,7 +571,7 @@
                   (FDCAN2_RXFIFO0_ELEMENT_SIZE + 8))
      /* ( FDCAN_ALIGN_UP(CONFIG_STM32H7_FDCAN2_RXFIFO0_SIZE * \
       *               FDCAN2_RXFIFO0_ELEMENT_SIZE + 8)
-      */               
+      */
 #  define FDCAN2_RXFIFO0_WORDS (FDCAN2_RXFIFO0_BYTES >> 2)
 
 
@@ -773,7 +774,7 @@
 #  define FDCAN2_TXFIFOQ_INDEX      (FDCAN2_TXDEDICATED_INDEX + FDCAN2_DEDICATED_TXBUFFER_WORDS)
 #  define FDCAN2_MSGRAM_WORDS       (FDCAN2_TXFIFOQ_INDEX + FDCAN2_TXFIFIOQ_WORDS)
 
-#  ifdef CONFIG_STM32H7_FDCAN1 
+#  ifdef CONFIG_STM32H7_FDCAN1
 #    if (FDCAN1_MSGRAM_WORDS + FDCAN2_MSGRAM_WORDS) > MSGRAM_MAX_WORDS
 #      error FDCAN1 and FDCAN2 config exceeds message RAM word limit
 #    endif
@@ -1455,7 +1456,7 @@ static void fdcan_putreg(FAR struct stm32_fdcan_s *priv, int offset,
 #ifdef CONFIG_STM32H7_FDCAN_REGDEBUG
 static void fdcan_dumpregs(FAR struct stm32_fdcan_s *priv,
                                   FAR const char *msg)
-{  
+{
   FAR const struct stm32_config_s *config = priv->config;
 
   caninfo("CAN%d Control and Status Registers: %s\n", config->port, msg);
@@ -1474,7 +1475,7 @@ static void fdcan_dumpregs(FAR struct stm32_fdcan_s *priv,
   caninfo("  IE:    %08x   TIE:   %08x\n",
           getreg32(config->base + STM32_FDCAN_IE_OFFSET),
           getreg32(config->base + STM32_FDCAN_TXBTIE_OFFSET));
-  
+
   caninfo("  ILE:   %08x   ILS:   %08x\n",
           getreg32(config->base + STM32_FDCAN_ILE_OFFSET),
           getreg32(config->base + STM32_FDCAN_ILS_OFFSET));
@@ -1529,7 +1530,7 @@ static void fdcan_dumprxregs(FAR struct stm32_fdcan_s *priv,
   caninfo("  RXF1S: %08x   RXF1A: %08x\n",
           getreg32(config->base + STM32_FDCAN_RXF1S_OFFSET),
           getreg32(config->base + STM32_FDCAN_RXF1A_OFFSET));
-  
+
   caninfo("  NDAT1: %08x   NDAT2: %08x\n",
           getreg32(config->base + STM32_FDCAN_NDAT1_OFFSET),
           getreg32(config->base + STM32_FDCAN_NDAT2_OFFSET));
@@ -1571,7 +1572,7 @@ static void fdcan_dumptxregs(FAR struct stm32_fdcan_s *priv,
           getreg32(config->base + STM32_FDCAN_TXFQS_OFFSET),
           getreg32(config->base + STM32_FDCAN_TXBAR_OFFSET),
           getreg32(config->base + STM32_FDCAN_TXBRP_OFFSET));
-  
+
   caninfo("  TXBTO: %08x   TXBCR: %08x   TXBCF: %08x\n",
           getreg32(config->base + STM32_FDCAN_TXBTO_OFFSET),
           getreg32(config->base + STM32_FDCAN_TXBCR_OFFSET),
@@ -3278,7 +3279,7 @@ static int fdcan_send(FAR struct can_dev_s *dev, FAR struct can_msg_s *msg)
   config = priv->config;
 
   caninfo("FDCAN%d\n", config->port);
-  caninfo("FDCAN%d ID: %d DLC: %d\n",
+  caninfo("FDCAN%d ID: %ld DLC: %d\n",
           config->port, msg->cm_hdr.ch_id, msg->cm_hdr.ch_dlc);
 
   /* That that FIFO elements were configured.
@@ -4005,7 +4006,7 @@ static int fdcan_interrupt(int irq, void *context, FAR void *arg)
 
           if ((pending & FDCAN_CMNERR_INTS) != 0)
             {
-              canerr("ERROR: Common %08x\n", pending & FDCAN_CMNERR_INTS);
+              canerr("ERROR: Common %08lx\n", pending & FDCAN_CMNERR_INTS);
 
               /* When a protocol error ocurrs, the problem is recorded in
                * the LEC/DLEC fields of the PSR register. In lieu of
@@ -4017,9 +4018,9 @@ static int fdcan_interrupt(int irq, void *context, FAR void *arg)
                * interrupts, so they are disabled here until we get a
                * successful transfer/receive on the hardware
                */
-              
+
               uint32_t psr = fdcan_getreg(priv, STM32_FDCAN_PSR_OFFSET);
-              
+
               if ((psr & FDCAN_PSR_LEC_MASK) != 0)
                 {
                   ie &= ~(FDCAN_INT_PEA | FDCAN_INT_PED);
@@ -4036,7 +4037,7 @@ static int fdcan_interrupt(int irq, void *context, FAR void *arg)
 
           if ((pending & FDCAN_TXERR_INTS) != 0)
             {
-              canerr("ERROR: TX %08x\n", pending & FDCAN_TXERR_INTS);
+              canerr("ERROR: TX %08lx\n", pending & FDCAN_TXERR_INTS);
 
               /* An Acknowledge-Error will occur if for example the device
                * is not connected to the bus.
@@ -4077,7 +4078,7 @@ static int fdcan_interrupt(int irq, void *context, FAR void *arg)
 
           if ((pending & FDCAN_RXERR_INTS) != 0)
             {
-              canerr("ERROR: RX %08x\n", pending & FDCAN_RXERR_INTS);
+              canerr("ERROR: RX %08lx\n", pending & FDCAN_RXERR_INTS);
 
               /* To prevent Interrupt-Flooding the current active
                * RX error interrupts are disabled. After successfully
@@ -4235,7 +4236,7 @@ static int fdcan_interrupt(int irq, void *context, FAR void *arg)
 
           if ((regval & FDCAN_RXFS_RFL) != 0)
             {
-              canerr("ERROR: Message lost: %08x\n", regval);
+              canerr("ERROR: Message lost: %08lx\n", regval);
             }
           else
             {
@@ -4275,7 +4276,7 @@ static int fdcan_interrupt(int irq, void *context, FAR void *arg)
 
           if ((regval & FDCAN_RXFS_RFL) != 0)
             {
-              canerr("ERROR: Message lost: %08x\n", regval);
+              canerr("ERROR: Message lost: %08lx\n", regval);
             }
           else
             {
@@ -4350,7 +4351,7 @@ static int fdcan_hw_initialize(struct stm32_fdcan_s *priv)
      * device is operational
      */
 
-    while ((fdcan_getreg(priv, STM32_FDCAN_CCCR_OFFSET) & FDCAN_CCCR_CSA) == 1);
+    while ((fdcan_getreg(priv, STM32_FDCAN_CCCR_OFFSET) & FDCAN_CCCR_CSA) == FDCAN_CCCR_CSA);
   }
 
   /* Enable the Initialization state */
@@ -4420,7 +4421,7 @@ static int fdcan_hw_initialize(struct stm32_fdcan_s *priv)
   regval = FDCAN_RXFC_FSA(config->rxfifo0start) |
            FDCAN_RXFC_FS(config->nrxfifo0);
   fdcan_putreg(priv, STM32_FDCAN_RXF0C_OFFSET, regval);
-  
+
   regval = FDCAN_RXFC_FSA(config->rxfifo1start) |
            FDCAN_RXFC_FS(config->nrxfifo1);
   fdcan_putreg(priv, STM32_FDCAN_RXF1C_OFFSET, regval);
@@ -4489,7 +4490,7 @@ static int fdcan_hw_initialize(struct stm32_fdcan_s *priv)
       regval &= ~FDCAN_TTOCF_OM_MASK;
       fdcan_putreg(priv, STM32_FDCAN_TTOCF_OFFSET, regval);
     }
-  
+
   /* CCU configuration
    * REVIST: CCU currently bypassed to used kernel clock
    * directly. Could be beneficial to get this working.
